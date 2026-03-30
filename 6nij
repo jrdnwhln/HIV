@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HIV-1 Env Mutation Explorer</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #151c33;
+      --panel2: #1d2745;
+      --text: #f4f7ff;
+      --muted: #b8c2e0;
+      --accent: #7aa2ff;
+      --accent2: #9d7bff;
+      --good: #6ee7b7;
+      --warn: #fbbf24;
+      --bad: #f87171;
+      --border: rgba(255,255,255,0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(122,162,255,0.16), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(157,123,255,0.14), transparent 25%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .container {
+      width: min(1100px, 92%);
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(122,162,255,0.12), rgba(157,123,255,0.08));
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.24);
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+
+    .sub {
+      color: var(--muted);
+      max-width: 860px;
+      font-size: 1.05rem;
+    }
+
+    .tagline {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--good);
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 22px;
+    }
+
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.22);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 16px 0 18px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent);
+      color: #08101f;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.96;
+    }
+
+    button.secondary {
+      background: #dbe5ff;
+    }
+
+    button.ghost {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .viz-wrap {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    @media (max-width: 700px) {
+      .viz-wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .protein {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .protein h3 {
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    .shape {
+      width: 100%;
+      height: 180px;
+      border-radius: 14px;
+      margin: 0 auto 10px;
+      position: relative;
+      overflow: hidden;
+      background: #0c1430;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .blob {
+      position: absolute;
+      inset: 22px;
+      border-radius: 45% 55% 50% 50% / 43% 48% 52% 57%;
+      background:
+        radial-gradient(circle at 25% 30%, rgba(255,255,255,0.35), transparent 12%),
+        radial-gradient(circle at 68% 70%, rgba(255,255,255,0.22), transparent 10%),
+        linear-gradient(135deg, #3b82f6, #ef4444);
+      filter: saturate(1);
+      transition: transform 0.5s ease, filter 0.4s ease;
+    }
+
+    .mutant-r298k .blob {
+      transform: scale(1.01) rotate(1deg);
+      filter: hue-rotate(10deg) saturate(1.08);
+    }
+
+    .mutant-v85a .blob {
+      transform: scale(0.995) rotate(-1deg);
+      filter: hue-rotate(-8deg) saturate(0.98);
+    }
+
+    .metric {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin: 5px 0;
+    }
+
+    .metric strong {
+      color: var(--text);
+    }
+
+    .quiz-options {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .quiz-option {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .quiz-option:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-1px);
+    }
+
+    .feedback {
+      margin-top: 14px;
+      min-height: 28px;
+      font-weight: 700;
+    }
+
+    .good { color: var(--good); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+
+    .section-list {
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .section-list li {
+      margin-bottom: 8px;
+    }
+
+    .reference-list {
+      padding-left: 22px;
+    }
+
+    .reference-list li {
+      margin-bottom: 14px;
+      color: var(--muted);
+    }
+
+    .note {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--warn);
+      background: rgba(251,191,36,0.08);
+      border-radius: 10px;
+      color: #ffe7a6;
+    }
+
+    .footer {
+      margin-top: 24px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(110,231,183,0.12);
+      color: var(--good);
+      font-size: 0.86rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 18px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <div class="pill">Interactive companion to the STEM Day poster</div>
+      <h1>HIV-1 Env Mutation Explorer</h1>
+      <p class="sub">
+        This page turns the poster into something you can touch. It follows the project’s central finding:
+        <strong>R298K and V85A showed near-identical global structure with only subtle energetic differences</strong>.
+        In other words, nothing dramatic was found, but the small shifts may still matter.
+      </p>
+      <div class="tagline">Small changes. Unclear consequences. Honest science.</div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Mini Experience</h2>
+        <p>
+          Press the buttons and watch what changes. This is not a literal protein model. It is a teaching tool built
+          from the poster’s message: <strong>global structure stayed nearly the same</strong>, while
+          <strong>electrostatic differences were subtle</strong>.
+        </p>
+
+        <div class="btn-row">
+          <button onclick="showState('wt')">Show Wild Type</button>
+          <button class="secondary" onclick="showState('r298k')">Apply R298K</button>
+          <button class="secondary" onclick="showState('v85a')">Apply V85A</button>
+          <button class="ghost" onclick="resetView()">Reset</button>
+        </div>
+
+        <div id="status" class="status">
+          Start with the wild-type structure, then compare each mutant. The lesson is simple: no major structural shift was observed.
+        </div>
+
+        <div class="viz-wrap">
+          <div class="protein">
+            <h3>Wild Type</h3>
+            <div class="shape">
+              <div class="blob"></div>
+            </div>
+            <div class="metric"><strong>Electrostatics:</strong> −6.04 × 10<sup>4</sup> kJ/mol</div>
+            <div class="metric"><strong>Interpretation:</strong> baseline reference</div>
+          </div>
+
+          <div class="protein mutant-r298k">
+            <h3>R298K</h3>
+            <div class="shape">
+              <div class="blob" id="blob-r298k"></div>
+            </div>
+            <div class="metric"><strong>TM-score:</strong> ~0.99</div>
+            <div class="metric"><strong>RMSD:</strong> 0.37 Å</div>
+            <div class="metric"><strong>Electrostatics:</strong> −6.08 × 10<sup>4</sup> kJ/mol</div>
+          </div>
+
+          <div class="protein mutant-v85a">
+            <h3>V85A</h3>
+            <div class="shape">
+              <div class="blob" id="blob-v85a"></div>
+            </div>
+            <div class="metric"><strong>TM-score:</strong> ~0.99</div>
+            <div class="metric"><strong>RMSD:</strong> 0.33 Å</div>
+            <div class="metric"><strong>Electrostatics:</strong> −6.04 × 10<sup>4</sup> kJ/mol</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Quick Check</h3>
+        <p>Based on the poster, what was the clearest finding?</p>
+
+        <div class="quiz-options">
+          <div class="quiz-option" onclick="checkAnswer(1)">The mutations caused major structural disruption in Env.</div>
+          <div class="quiz-option" onclick="checkAnswer(2)">The mutations preserved global structure and showed only subtle energetic differences.</div>
+          <div class="quiz-option" onclick="checkAnswer(3)">The experiment proved enhanced cell-to-cell transmission.</div>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+      </section>
+
+      <section class="card">
+        <h2>What the Poster Says</h2>
+        <ul class="section-list">
+          <li><strong>Question:</strong> Do R298K and V85A meaningfully alter HIV-1 Env?</li>
+          <li><strong>Structural result:</strong> Near-identical global folding, with RMSD values of 0.33–0.37 Å and TM-scores of ~0.99.</li>
+          <li><strong>Energetic result:</strong> Only subtle electrostatic differences were observed.</li>
+          <li><strong>What was not shown:</strong> No major structural change. No proven functional enhancement. No proof of increased CCT.</li>
+          <li><strong>Takeaway:</strong> The findings suggest subtle shifts that may be worth exploring further, especially in other mutations or with deeper analysis.</li>
+        </ul>
+
+        <div class="note">
+          This project does <strong>not</strong> claim a strong significant effect from these two mutations alone.
+          It supports a larger question: whether small biophysical differences could matter in HIV-1 Env behavior.
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>Selected References</h2>
+        <ol class="reference-list">
+          <li>Wyatt, R., &amp; Sodroski, J. (1998). The HIV-1 envelope glycoproteins: fusogens, antigens, and immunogens. <em>Science, 280</em>(5371), 1884–1888.</li>
+          <li>Sattentau, Q. (2008). Avoiding the void: cell-to-cell spread of human viruses. <em>Nature Reviews Microbiology, 6</em>(11), 815–826.</li>
+          <li>Dimitrov, D. S. (1997). How do viruses enter cells? The HIV coreceptors teach us a lesson of complexity. <em>Cell, 91</em>(6), 721–730.</li>
+          <li>Baker, N. A., Sept, D., Joseph, S., Holst, M. J., &amp; McCammon, J. A. (2001). Electrostatics of nanosystems: application to microtubules and the ribosome. <em>PNAS, 98</em>(18), 10037–10041.</li>
+          <li>Krieger, E., &amp; Vriend, G. (2014). YASARA View—molecular graphics for all devices. <em>Bioinformatics, 30</em>(20), 2981–2982.</li>
+          <li>TM-score Server. (n.d.). Retrieved from the TM-score server used for structural alignment analysis.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="footer">
+      Built as a poster companion for STEM Day. Honest result, clean interpretation, no fake hype.
+    </div>
+  </div>
+
+  <script>
+    const status = document.getElementById("status");
+    const feedback = document.getElementById("feedback");
+
+    function showState(state) {
+      if (state === "wt") {
+        status.innerHTML = "<strong>Wild Type:</strong> This is the reference state. The poster compares R298K and V85A against this baseline.";
+      } else if (state === "r298k") {
+        status.innerHTML = "<strong>R298K:</strong> TM-score remained ~0.99 and RMSD stayed low (0.37 Å), indicating near-identical global structure. Electrostatic energy was slightly more negative than wild type, but the difference was subtle.";
+      } else if (state === "v85a") {
+        status.innerHTML = "<strong>V85A:</strong> TM-score remained ~0.99 and RMSD stayed low (0.33 Å), again supporting minimal structural deviation. Electrostatic energy was essentially similar to wild type.";
+      }
+    }
+
+    function resetView() {
+      status.innerHTML = "Start with the wild-type structure, then compare each mutant. The lesson is simple: no major structural shift was observed.";
+      feedback.textContent = "";
+      feedback.className = "feedback";
+    }
+
+    function checkAnswer(choice) {
+      if (choice === 2) {
+        feedback.textContent = "Correct. The cleanest conclusion is preserved global structure with only subtle energetic differences.";
+        feedback.className = "feedback good";
+      } else if (choice === 1) {
+        feedback.textContent = "Not quite. The poster specifically says structural deviation was minimal.";
+        feedback.className = "feedback bad";
+      } else {
+        feedback.textContent = "Too strong. The poster does not prove enhanced CCT from these findings alone.";
+        feedback.className = "feedback warn";
+      }
+    }
+  </script>
+</body>
+</html>
