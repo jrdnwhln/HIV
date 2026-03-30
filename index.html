@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HIV-1 Env Mutation Explorer</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0a0f1f;
+  color: white;
+}
+.container {
+  width: 90%;
+  margin: auto;
+  padding: 20px;
+}
+.card {
+  background: #111a33;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+button {
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+}
+.reference-list {
+  font-size: 0.9rem;
+}
+canvas {
+  display: block;
+  margin: auto;
+  background: black;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>HIV-1 Env Mutation Explorer</h1>
+
+<div class="card">
+<h2>Mutation Viewer</h2>
+
+<button onclick="showState('wt')">Wild Type</button>
+<button onclick="showState('r298k')">R298K</button>
+<button onclick="showState('v85a')">V85A</button>
+
+<p id="status">Click a mutation to view results.</p>
+</div>
+
+<div class="card">
+<h2>Final Game: Env Maze</h2>
+
+<p>Fun Pac-Man style game inspired by the study (not literal science).</p>
+
+<canvas id="mazeGame" width="640" height="450"></canvas>
+
+<p>Score: <span id="score">0</span> | Lives: <span id="lives">3</span></p>
+
+<button onclick="startGame()">Start</button>
+<button onclick="resetGame()">Reset</button>
+
+<p id="gameMessage">Use arrow keys or WASD.</p>
+</div>
+
+<div class="card">
+<h2>Selected References</h2>
+
+<ol class="reference-list">
+<li>Wyatt, R., &amp; Sodroski, J. (1998). The HIV-1 envelope glycoproteins: fusogens, antigens, and immunogens. <em>Science, 280</em>(5371), 1884–1888.</li>
+
+<li>Sattentau, Q. (2008). Avoiding the void: cell-to-cell spread of human viruses. <em>Nature Reviews Microbiology, 6</em>(11), 815–826.</li>
+
+<li>Dimitrov, D. S. (1997). How do viruses enter cells? The HIV coreceptors teach us a lesson of complexity. <em>Cell, 91</em>(6), 721–730.</li>
+
+<li>Baker, N. A., Sept, D., Joseph, S., Holst, M. J., &amp; McCammon, J. A. (2001). Electrostatics of nanosystems: Application to microtubules and the ribosome. <em>Proceedings of the National Academy of Sciences, 98</em>(18), 10037–10041.</li>
+
+<li>Krieger, E., &amp; Vriend, G. (2014). YASARA View—molecular graphics for all devices. <em>Bioinformatics, 30</em>(20), 2981–2982.</li>
+
+<li>TM-score Server. (n.d.). Retrieved from https://aideepmed.com/TM-score/</li>
+
+<li>APBS Server. (n.d.). Adaptive Poisson-Boltzmann Solver. Retrieved from https://server.poissonboltzmann.org/</li>
+</ol>
+
+</div>
+
+</div>
+
+<script>
+function showState(state) {
+  const status = document.getElementById("status");
+  if (state === "wt") status.innerHTML = "Wild Type: baseline.";
+  if (state === "r298k") status.innerHTML = "R298K: minimal structural change.";
+  if (state === "v85a") status.innerHTML = "V85A: minimal structural change.";
+}
+
+// GAME
+const canvas = document.getElementById("mazeGame");
+const ctx = canvas.getContext("2d");
+
+let player = {x: 50, y: 50};
+let score = 0;
+let lives = 3;
+let running = false;
+
+function draw() {
+  ctx.clearRect(0,0,640,450);
+  ctx.fillStyle = "yellow";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, 10, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function update() {
+  if (!running) return;
+  draw();
+  requestAnimationFrame(update);
+}
+
+function startGame() {
+  running = true;
+  update();
+}
+
+function resetGame() {
+  running = false;
+  score = 0;
+  lives = 3;
+  player.x = 50;
+  player.y = 50;
+  draw();
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") player.x += 5;
+  if (e.key === "ArrowLeft") player.x -= 5;
+  if (e.key === "ArrowUp") player.y -= 5;
+  if (e.key === "ArrowDown") player.y += 5;
+});
+</script>
+
+</body>
+</html>
